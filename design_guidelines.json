@@ -1,0 +1,163 @@
+{
+  "identity": "E1",
+  "project_name": "OTNT ERP",
+  "design_philosophy": {
+    "core_concept": "The Performance Pro",
+    "emotional_tone": "Tactical, Precision, Industrial, Reliable",
+    "visual_style": "Dark Mode First, High Contrast, Data-Dense",
+    "surface_strategy": "Grid Borders (The Technical Look)"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Barlow Condensed, sans-serif",
+      "import_url": "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&display=swap",
+      "usage": "All H1-H3 headings, KPI values, and navigation labels. Use font-weight 600 or 700.",
+      "letter_spacing": "tracking-tight"
+    },
+    "body": {
+      "font_family": "IBM Plex Sans, sans-serif",
+      "import_url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap",
+      "usage": "Body text, table data, form inputs.",
+      "letter_spacing": "tracking-normal"
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "import_url": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap",
+      "usage": "Serial numbers, IMEIs, SKUs, code snippets."
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": "#09090b",
+      "foreground": "#fafafa",
+      "card": "#18181b",
+      "card_foreground": "#fafafa",
+      "popover": "#09090b",
+      "popover_foreground": "#fafafa",
+      "primary": "#3b82f6",
+      "primary_foreground": "#ffffff",
+      "secondary": "#27272a",
+      "secondary_foreground": "#fafafa",
+      "muted": "#27272a",
+      "muted_foreground": "#a1a1aa",
+      "accent": "#27272a",
+      "accent_foreground": "#fafafa",
+      "destructive": "#ef4444",
+      "destructive_foreground": "#fafafa",
+      "border": "#27272a",
+      "input": "#27272a",
+      "ring": "#3b82f6"
+    },
+    "chart_colors": {
+      "chart_1": "#3b82f6",
+      "chart_2": "#10b981",
+      "chart_3": "#f59e0b",
+      "chart_4": "#8b5cf6",
+      "chart_5": "#ec4899"
+    },
+    "semantic": {
+      "success": "#10b981",
+      "warning": "#f59e0b",
+      "error": "#ef4444",
+      "info": "#3b82f6"
+    }
+  },
+  "layout_strategies": {
+    "dashboard_grid": {
+      "name": "High Density Grid (Mode B)",
+      "classes": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4",
+      "rules": [
+        "Use tight gaps (gap-4)",
+        "Every pixel must be utilized",
+        "Use h-full on children to ensure they stretch",
+        "No jagged bottoms"
+      ]
+    },
+    "storefront_grid": {
+      "name": "Tetris Grid (Mode A)",
+      "classes": "grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-8",
+      "rules": [
+        "Asymmetry is key",
+        "Mix Hero (col-span-8), Square (col-span-4), and Tall (row-span-2) shapes",
+        "Leave breathing room"
+      ]
+    },
+    "spacing": {
+      "scale": "Generous (2-3x standard)",
+      "container_padding": "p-6 or p-8 for bordered containers",
+      "section_spacing": "py-12 or py-20"
+    }
+  },
+  "component_rules": {
+    "general": [
+      "Use Shadcn UI components for all interactive elements.",
+      "Customize Shadcn components to match the 'Performance Pro' aesthetic (sharp corners or minimal radius).",
+      "Avoid 'Inter' font for headings.",
+      "Use 'Grid Borders' style for dashboard containers: border-r border-b border-border/40."
+    ],
+    "cards": {
+      "style": "Flat background, 1px subtle border (border-border), no shadow by default.",
+      "hover": "Slight lift (-translate-y-1), subtle shadow (shadow-lg), border color darkens."
+    },
+    "buttons": {
+      "style": "Sharp or slightly rounded (rounded-md). High contrast.",
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+    },
+    "tables": {
+      "style": "Dense, high contrast headers. Use monospace font for IDs/SKUs.",
+      "row_hover": "bg-muted/50"
+    },
+    "forms": {
+      "style": "Minimalist. Input borders should be visible but subtle.",
+      "focus": "Ring-2 ring-primary ring-offset-2 ring-offset-background"
+    }
+  },
+  "assets": {
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px or 2px for clarity."
+    },
+    "images": [
+      {
+        "category": "hero_robot",
+        "url": "https://images.unsplash.com/photo-1762500824321-de3c2f316156?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzJ8MHwxfHNlYXJjaHwyfHxyb2JvdCUyMHZhY3V1bSUyMGNsZWFuZXIlMjBtb2Rlcm4lMjBob21lfGVufDB8fHx8MTc3MDQwMTI0OXww&ixlib=rb-4.1.0&q=85",
+        "description": "Sleek white robot vacuum on metallic surface, minimalist."
+      },
+      {
+        "category": "warehouse_bg",
+        "url": "https://images.unsplash.com/photo-1672552226650-796f40198c47?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwzfHx3YXJlaG91c2UlMjBpbnZlbnRvcnklMjBzaGVsdmVzJTIwZGFyayUyMGFlc3RoZXRpY3xlbnwwfHx8fDE3NzA0MDEyNTN8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Large warehouse with boxes, dark aesthetic."
+      },
+      {
+        "category": "technician_repair",
+        "url": "https://images.unsplash.com/photo-1726739819428-a8f250e60691?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwyfHxlbGVjdHJvbmljcyUyMHJlcGFpciUyMHRlY2huaWNpYW4lMjBjbG9zZSUyMHVwfGVufDB8fHx8MTc3MDQwMTI1OHww&ixlib=rb-4.1.0&q=85",
+        "description": "Close up of person holding small electronic device."
+      },
+      {
+        "category": "lifestyle_home",
+        "url": "https://images.unsplash.com/photo-1762859731349-c9ff2808b672?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzJ8MHwxfHNlYXJjaHwxfHxyb2JvdCUyMHZhY3V1bSUyMGNsZWFuZXIlMjBtb2Rlcm4lMjBob21lfGVufDB8fHx8MTc3MDQwMTI0OXww&ixlib=rb-4.1.0&q=85",
+        "description": "Robot vacuum cleaning modern living room with family."
+      }
+    ]
+  },
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) for overlays.",
+    "You MUST NOT apply universal transition. Eg: transition: all.",
+    "You MUST NOT center align the app container.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations.",
+    "NEVER use AI assistant Emoji characters.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations.",
+    "Prioritize using pre-existing components from src/components/ui when applicable.",
+    "Components MUST use named exports.",
+    "Pages MUST use default exports.",
+    "Use sonner for toasts.",
+    "All interactive and key informational elements MUST include a data-testid attribute."
+  ],
+  "instructions_to_main_agent": "Follow the 'Performance Pro' archetype. Implement the dark mode colors in tailwind.config.js immediately. Use the provided image URLs for the respective sections. Ensure the dashboard uses the 'High Density Grid' and the storefront uses the 'Tetris Grid'. Use 'Barlow Condensed' for all headings to give it a distinct industrial/tech look."
+}
