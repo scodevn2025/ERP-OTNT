@@ -19,6 +19,7 @@ import {
   BarChart3,
   Building2,
   Settings,
+  Image,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ const navItems = [
   { icon: FileText, label: 'Bài viết (Blog)', path: '/admin/blogs' },
   { icon: Settings, label: 'Cấu hình Store', path: '/admin/settings' },
   { icon: Users, label: 'Quản lý nhân viên', path: '/admin/users' },
+  { icon: Image, label: 'Quản lý Media', path: '/admin/media' },
   { icon: Wrench, label: 'Sửa chữa', path: '/admin/repairs', disabled: true },
 ];
 

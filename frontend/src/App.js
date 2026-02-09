@@ -31,6 +31,7 @@ import StoreSettingsPage from "@/pages/admin/StoreSettingsPage";
 import BlogsManagementPage from "@/pages/admin/BlogsManagementPage";
 import BlogEditorPage from "@/pages/admin/BlogEditorPage";
 import UsersManagementPage from "@/pages/admin/UsersManagementPage";
+import MediaManagerPage from "@/pages/admin/MediaManagerPage";
 
 // Store Pages
 import HomePage from "@/pages/store/HomePage";
@@ -69,6 +70,7 @@ function App() {
                 <Route path="blogs/new" element={<BlogEditorPage />} />
                 <Route path="blogs/edit/:id" element={<BlogEditorPage />} />
                 <Route path="users" element={<UsersManagementPage />} />
+                <Route path="media" element={<MediaManagerPage />} />
 
                 {/* Future Modules */}
                 <Route path="repairs" element={<DashboardPage />} />

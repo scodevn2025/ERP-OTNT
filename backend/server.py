@@ -1,11 +1,14 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Query, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
+import aiofiles
+import shutil
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional, Literal
 import uuid
@@ -30,6 +33,10 @@ JWT_EXPIRATION_HOURS = 24
 app = FastAPI(title="OTNT ERP API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
+
+# Media upload directory
+UPLOADS_DIR = ROOT_DIR / 'uploads'
+UPLOADS_DIR.mkdir(exist_ok=True)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -3296,8 +3303,115 @@ async def seed_data(user: dict = Depends(require_admin)):
 async def root():
     return {"message": "OTNT ERP API v1.0", "status": "running"}
 
+# ==================== MEDIA MANAGEMENT ====================
+
+class MediaResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    filename: str
+    original_name: str
+    content_type: str
+    size: int
+    url: str
+    created_at: str
+    uploaded_by: Optional[str] = None
+
+@api_router.post("/admin/media/upload")
+async def upload_media(
+    files: List[UploadFile] = File(...),
+    admin: dict = Depends(require_admin)
+):
+    """Upload one or more media files."""
+    uploaded = []
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+    max_size = 10 * 1024 * 1024  # 10MB
+    
+    for file in files:
+        # Validate content type
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File type {file.content_type} not allowed. Allowed: {', '.join(allowed_types)}"
+            )
+        
+        # Read file content
+        content = await file.read()
+        file_size = len(content)
+        
+        if file_size > max_size:
+            raise HTTPException(status_code=400, detail=f"File {file.filename} exceeds 10MB limit")
+        
+        # Generate unique filename
+        file_ext = Path(file.filename).suffix.lower()
+        unique_name = f"{uuid.uuid4()}{file_ext}"
+        file_path = UPLOADS_DIR / unique_name
+        
+        # Save file
+        async with aiofiles.open(file_path, 'wb') as f:
+            await f.write(content)
+        
+        # Store in MongoDB
+        media_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        media_doc = {
+            "id": media_id,
+            "filename": unique_name,
+            "original_name": file.filename,
+            "content_type": file.content_type,
+            "size": file_size,
+            "url": f"/uploads/{unique_name}",
+            "created_at": now,
+            "uploaded_by": admin.get('id')
+        }
+        
+        await db.media.insert_one(media_doc)
+        uploaded.append(MediaResponse(**media_doc))
+    
+    return {"uploaded": uploaded, "count": len(uploaded)}
+
+@api_router.get("/admin/media", response_model=List[MediaResponse])
+async def list_media(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    admin: dict = Depends(require_admin)
+):
+    """List all uploaded media files."""
+    cursor = db.media.find({}, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit)
+    items = await cursor.to_list(length=limit)
+    return [MediaResponse(**item) for item in items]
+
+@api_router.get("/admin/media/count")
+async def count_media(admin: dict = Depends(require_admin)):
+    """Get total media count."""
+    count = await db.media.count_documents({})
+    return {"count": count}
+
+@api_router.delete("/admin/media/{media_id}")
+async def delete_media(
+    media_id: str,
+    admin: dict = Depends(require_admin)
+):
+    """Delete a media file."""
+    media = await db.media.find_one({"id": media_id})
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    
+    # Delete file from disk
+    file_path = UPLOADS_DIR / media['filename']
+    if file_path.exists():
+        file_path.unlink()
+    
+    # Delete from database
+    await db.media.delete_one({"id": media_id})
+    
+    return {"message": "Media deleted successfully"}
+
 # Include router and middleware
 app.include_router(api_router)
+
+# Mount static files for uploads
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,

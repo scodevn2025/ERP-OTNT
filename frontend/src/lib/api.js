@@ -143,6 +143,18 @@ export const adminAPI = {
   createUser: (data) => api.post('/admin/users', data),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
+
+  // Media
+  getMedia: (params) => api.get('/admin/media', { params }),
+  getMediaCount: () => api.get('/admin/media/count'),
+  uploadMedia: (files) => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.post('/admin/media/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  deleteMedia: (id) => api.delete(`/admin/media/${id}`),
 };
 
 // Store (Public) APIs
