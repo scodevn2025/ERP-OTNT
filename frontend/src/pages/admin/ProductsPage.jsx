@@ -32,6 +32,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Save, X, Image as ImageIcon, Settings, FileText } from 'lucide-react';
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -128,12 +130,12 @@ export default function ProductsPage() {
     setEditingProduct(null);
   };
 
-  const openCreateDialog = () => {
+  const openCreateMode = () => {
     resetForm();
     setDialogOpen(true);
   };
 
-  const openEditDialog = (product) => {
+  const openEditMode = (product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -158,7 +160,7 @@ export default function ProductsPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     try {
       const data = {
         ...formData,
@@ -200,6 +202,273 @@ export default function ProductsPage() {
     });
   };
 
+  if (dialogOpen) {
+    return (
+      <div className="p-8 max-w-6xl mx-auto" data-testid="product-editor">
+        <div className="flex items-center justify-between mb-8 sticky top-0 bg-background/95 backdrop-blur z-10 py-4 -mt-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setDialogOpen(false)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="font-heading text-2xl font-bold">
+                {editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {editingProduct ? `Lần cuối cập nhật: ${new Date(editingProduct.created_at).toLocaleDateString('vi-VN')}` : 'Nhập thông tin sản phẩm mới'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button onClick={handleSubmit} className="gap-2">
+              <Save className="w-4 h-4" />
+              Lưu sản phẩm
+            </Button>
+          </div>
+        </div>
+
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="bg-muted/50 p-1">
+            <TabsTrigger value="general" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Thông tin chung
+            </TabsTrigger>
+            <TabsTrigger value="description" className="gap-2">
+              <Settings className="w-4 h-4" />
+              Mô tả chi tiết
+            </TabsTrigger>
+            <TabsTrigger value="media" className="gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Hình ảnh & Specs
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-6">
+            <Card className="border-border/40 bg-card/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Thông tin cơ bản</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 space-y-2">
+                    <Label>Tên sản phẩm *</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => handleNameChange(e.target.value)}
+                      placeholder="Ecovacs Deebot X2 Omni"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Slug</Label>
+                    <Input
+                      value={formData.slug}
+                      onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                      placeholder="ecovacs-deebot-x2-omni"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SKU *</Label>
+                    <Input
+                      value={formData.sku}
+                      onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
+                      placeholder="ECO-X2-OMNI"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Loại sản phẩm *</Label>
+                    <Select
+                      value={formData.product_type}
+                      onValueChange={(v) => setFormData({ ...formData, product_type: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(PRODUCT_TYPES).map(([key, type]) => (
+                          <SelectItem key={key} value={key}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Thương hiệu</Label>
+                    <Select
+                      value={formData.brand_id}
+                      onValueChange={(v) => setFormData({ ...formData, brand_id: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn thương hiệu" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {brands.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Danh mục</Label>
+                    <Select
+                      value={formData.category_id}
+                      onValueChange={(v) => setFormData({ ...formData, category_id: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn danh mục" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bảo hành (tháng)</Label>
+                    <Input
+                      type="number"
+                      value={formData.warranty_months}
+                      onChange={(e) => setFormData({ ...formData, warranty_months: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40 bg-card/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Giá & Theo dõi</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Giá bán (VNĐ) *</Label>
+                    <Input
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Giá vốn (VNĐ)</Label>
+                    <Input
+                      type="number"
+                      value={formData.cost_price}
+                      onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="col-span-2 flex items-center justify-between p-4 rounded-lg bg-muted/30">
+                    <div>
+                      <p className="font-medium">Tracking Serial/IMEI</p>
+                      <p className="text-sm text-muted-foreground">Theo dõi từng thiết bị theo số serial</p>
+                    </div>
+                    <Switch
+                      checked={formData.track_serial}
+                      onCheckedChange={(v) => setFormData({ ...formData, track_serial: v })}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="description" className="space-y-6">
+            <Card className="border-border/40 bg-card/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Mô tả sản phẩm</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Mô tả ngắn</Label>
+                  <Input
+                    value={formData.short_description}
+                    onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+                    placeholder="Mô tả ngắn gọn hiển thị ở danh mục..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mô tả chi tiết</Label>
+                  <div className="border rounded-md overflow-hidden bg-white">
+                    <Editor
+                      apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                      init={{
+                        height: 600,
+                        menubar: true,
+                        plugins: [
+                          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                          'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                          'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                        ],
+                        toolbar: 'undo redo | blocks | ' +
+                          'bold italic forecolor | alignleft aligncenter ' +
+                          'alignright alignjustify | bullist numlist outdent indent | ' +
+                          'image media table | removeformat | help',
+                        content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px }',
+                        skin: 'oxide-dark',
+                        content_css: 'dark',
+                      }}
+                      value={formData.description}
+                      onEditorChange={(content) => setFormData({ ...formData, description: content })}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="media" className="space-y-6">
+            <Card className="border-border/40 bg-card/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Hình ảnh</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Ảnh sản phẩm (URL, mỗi dòng một ảnh)</Label>
+                  <Textarea
+                    value={formData.images.join('\n')}
+                    onChange={(e) => setFormData({ ...formData, images: e.target.value.split('\n').filter(Boolean) })}
+                    placeholder="https://example.com/image1.jpg"
+                    rows={6}
+                  />
+                </div>
+                {formData.images.length > 0 && (
+                  <div className="grid grid-cols-4 gap-4">
+                    {formData.images.map((img, idx) => (
+                      <div key={idx} className="aspect-square rounded-lg border overflow-hidden relative group">
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setFormData({
+                            ...formData,
+                            images: formData.images.filter((_, i) => i !== idx)
+                          })}
+                          className="absolute top-1 right-1 bg-destructive p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8" data-testid="products-page">
       {/* Header */}
@@ -208,7 +477,7 @@ export default function ProductsPage() {
           <h1 className="font-heading text-3xl font-bold">Sản phẩm</h1>
           <p className="text-muted-foreground">Quản lý danh sách sản phẩm</p>
         </div>
-        <Button onClick={openCreateDialog} className="gap-2" data-testid="add-product-btn">
+        <Button onClick={openCreateMode} className="gap-2" data-testid="add-product-btn">
           <Plus className="w-4 h-4" />
           Thêm sản phẩm
         </Button>
@@ -323,7 +592,7 @@ export default function ProductsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEditDialog(product)}>
+                            <DropdownMenuItem onClick={() => openEditMode(product)}>
                               <Edit className="w-4 h-4 mr-2" />
                               Chỉnh sửa
                             </DropdownMenuItem>
@@ -345,189 +614,6 @@ export default function ProductsPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-heading">
-              {editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-2">
-                <Label>Tên sản phẩm *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="Ecovacs Deebot X2 Omni"
-                  required
-                  data-testid="product-name-input"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Slug</Label>
-                <Input
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="ecovacs-deebot-x2-omni"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>SKU *</Label>
-                <Input
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
-                  placeholder="ECO-X2-OMNI"
-                  required
-                  data-testid="product-sku-input"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Loại sản phẩm *</Label>
-                <Select
-                  value={formData.product_type}
-                  onValueChange={(v) => setFormData({ ...formData, product_type: v })}
-                >
-                  <SelectTrigger data-testid="product-type-select">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PRODUCT_TYPES).map(([key, type]) => (
-                      <SelectItem key={key} value={key}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Thương hiệu</Label>
-                <Select
-                  value={formData.brand_id}
-                  onValueChange={(v) => setFormData({ ...formData, brand_id: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn thương hiệu" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {brands.map((brand) => (
-                      <SelectItem key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Danh mục</Label>
-                <Select
-                  value={formData.category_id}
-                  onValueChange={(v) => setFormData({ ...formData, category_id: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn danh mục" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Bảo hành (tháng)</Label>
-                <Input
-                  type="number"
-                  value={formData.warranty_months}
-                  onChange={(e) => setFormData({ ...formData, warranty_months: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Giá bán (VNĐ) *</Label>
-                <Input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                  required
-                  data-testid="product-price-input"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Giá vốn (VNĐ)</Label>
-                <Input
-                  type="number"
-                  value={formData.cost_price}
-                  onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label>Mô tả ngắn</Label>
-                <Input
-                  value={formData.short_description}
-                  onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
-                  placeholder="Mô tả ngắn gọn..."
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label>Mô tả chi tiết</Label>
-                <div className="border rounded-md overflow-hidden">
-                  <Editor
-                    init={{
-                      height: 400,
-                      menubar: true,
-                      plugins: [
-                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                        'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                      ],
-                      toolbar: 'undo redo | blocks | ' +
-                        'bold italic forecolor | alignleft aligncenter ' +
-                        'alignright alignjustify | bullist numlist outdent indent | ' +
-                        'removeformat | help',
-                      content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px }',
-                      skin: 'oxide-dark',
-                      content_css: 'dark',
-                    }}
-                    value={formData.description}
-                    onEditorChange={(content) => setFormData({ ...formData, description: content })}
-                  />
-                </div>
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label>Ảnh sản phẩm (URL, mỗi dòng một ảnh)</Label>
-                <Textarea
-                  value={formData.images.join('\n')}
-                  onChange={(e) => setFormData({ ...formData, images: e.target.value.split('\n').filter(Boolean) })}
-                  placeholder="https://example.com/image1.jpg\nhttps://example.com/image2.jpg"
-                  rows={3}
-                />
-              </div>
-              <div className="col-span-2 flex items-center justify-between p-4 rounded-lg bg-muted/30">
-                <div>
-                  <p className="font-medium">Tracking Serial/IMEI</p>
-                  <p className="text-sm text-muted-foreground">Theo dõi từng thiết bị theo số serial</p>
-                </div>
-                <Switch
-                  checked={formData.track_serial}
-                  onCheckedChange={(v) => setFormData({ ...formData, track_serial: v })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Hủy
-              </Button>
-              <Button type="submit" data-testid="product-submit-btn">
-                {editingProduct ? 'Cập nhật' : 'Thêm mới'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
