@@ -128,9 +128,21 @@ export const adminAPI = {
   getInventoryValuation: (params) => api.get('/admin/reports/inventory-valuation', { params }),
   getProfitLoss: () => api.get('/admin/reports/profit-loss'),
 
+  // Blogs
+  getBlogs: () => api.get('/admin/blogs'),
+  createBlog: (data) => api.post('/admin/blogs', data),
+  updateBlog: (id, data) => api.put(`/admin/blogs/${id}`, data),
+  deleteBlog: (id) => api.delete(`/admin/blogs/${id}`),
+
   // Store Configuration
   getStoreConfig: () => api.get('/admin/config'),
   updateStoreConfig: (data) => api.post('/admin/config', data),
+
+  // Users
+  getUsers: () => api.get('/admin/users'),
+  createUser: (data) => api.post('/admin/users', data),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
 };
 
 // Store (Public) APIs
@@ -140,6 +152,8 @@ export const storeAPI = {
   getCategories: () => api.get('/store/categories'),
   getBrands: () => api.get('/store/brands'),
   getConfig: () => api.get('/store/config'),
+  getBlogs: (params) => api.get('/store/blogs', { params }),
+  getBlog: (slug) => api.get(`/store/blogs/${slug}`),
 };
 
 export default api;

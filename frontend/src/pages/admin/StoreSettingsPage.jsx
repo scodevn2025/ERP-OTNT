@@ -17,7 +17,9 @@ import {
     Globe,
     Plus,
     Trash2,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Zap,
+    Timer
 } from 'lucide-react';
 
 export default function StoreSettingsPage() {
@@ -188,19 +190,14 @@ export default function StoreSettingsPage() {
                 <Card className="md:col-span-2 shadow-sm border-gray-100">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon size={18} /> Banner Quảng Cáo (Trang chủ)</CardTitle>
-                            <CardDescription>Quản lý các hình ảnh chạy ở đầu trang chủ.</CardDescription>
+                            <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon size={18} /> Banner Chính (Slider)</CardTitle>
+                            <CardDescription>Các hình ảnh lớn chạy ở đầu trang chủ.</CardDescription>
                         </div>
                         <Button variant="outline" size="sm" onClick={addBanner} className="gap-1 border-primary text-primary">
                             <Plus size={16} /> Thêm Banner
                         </Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {config.hero_banners.length === 0 && (
-                            <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">
-                                Chưa có banner nào. Sử dụng banner mặc định.
-                            </div>
-                        )}
                         {config.hero_banners.map((banner, index) => (
                             <div key={index} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg bg-gray-50 relative group">
                                 <div className="flex-1 space-y-3">
@@ -211,12 +208,12 @@ export default function StoreSettingsPage() {
                                     />
                                     <div className="grid grid-cols-2 gap-2">
                                         <Input
-                                            placeholder="Tiêu đề (Tùy chọn)"
+                                            placeholder="Tiêu đề"
                                             value={banner.title}
                                             onChange={e => updateBanner(index, 'title', e.target.value)}
                                         />
                                         <Input
-                                            placeholder="Link điều hướng (VD: /products)"
+                                            placeholder="Link điều hướng"
                                             value={banner.link}
                                             onChange={e => updateBanner(index, 'link', e.target.value)}
                                         />
@@ -232,6 +229,108 @@ export default function StoreSettingsPage() {
                                 </Button>
                             </div>
                         ))}
+                    </CardContent>
+                </Card>
+
+                {/* Promo Sections (Ads) */}
+                <Card className="md:col-span-2 shadow-sm border-gray-100">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="flex items-center gap-2 text-lg"><Zap size={18} /> Quảng Cáo & Khuyến Mãi (3-Grid)</CardTitle>
+                            <CardDescription>3 banner phụ hiển thị bên dưới banner chính.</CardDescription>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setConfig({ ...config, promo_sections: [...(config.promo_sections || []), { image_url: '', title: '', link: '', tag: '' }] })}
+                            className="gap-1 border-primary text-primary"
+                        >
+                            <Plus size={16} /> Thêm Quảng Cáo
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {(config.promo_sections || []).map((promo, index) => (
+                            <div key={index} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg bg-gray-50 relative group">
+                                <div className="flex-1 space-y-3">
+                                    <Input
+                                        placeholder="Link hình ảnh (Nên chọn 400x200)"
+                                        value={promo.image_url}
+                                        onChange={e => {
+                                            const newPromos = [...config.promo_sections];
+                                            newPromos[index].image_url = e.target.value;
+                                            setConfig({ ...config, promo_sections: newPromos });
+                                        }}
+                                    />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Input
+                                            placeholder="Tiêu đề / Tag (VD: 1 đổi 1)"
+                                            value={promo.tag}
+                                            onChange={e => {
+                                                const newPromos = [...config.promo_sections];
+                                                newPromos[index].tag = e.target.value;
+                                                setConfig({ ...config, promo_sections: newPromos });
+                                            }}
+                                        />
+                                        <Input
+                                            placeholder="Link điều hướng"
+                                            value={promo.link}
+                                            onChange={e => {
+                                                const newPromos = [...config.promo_sections];
+                                                newPromos[index].link = e.target.value;
+                                                setConfig({ ...config, promo_sections: newPromos });
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => {
+                                        const newPromos = config.promo_sections.filter((_, i) => i !== index);
+                                        setConfig({ ...config, promo_sections: newPromos });
+                                    }}
+                                >
+                                    <Trash2 size={20} />
+                                </Button>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+
+                {/* Flash Sale Config */}
+                <Card className="md:col-span-2 shadow-sm border-gray-100">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg"><Timer size={18} /> Cấu Hình Flash Sale</CardTitle>
+                        <CardDescription>Thời gian đếm ngược và trạng thái Flash Sale.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    id="flash_active"
+                                    className="w-4 h-4 text-primary"
+                                    checked={config.flash_sale?.is_active || false}
+                                    onChange={e => setConfig({
+                                        ...config,
+                                        flash_sale: { ...(config.flash_sale || {}), is_active: e.target.checked }
+                                    })}
+                                />
+                                <Label htmlFor="flash_active">Kích hoạt Flash Sale</Label>
+                            </div>
+                            <div className="flex-1">
+                                <Label>Thời gian kết thúc (ISO hoặc YYYY-MM-DD HH:mm)</Label>
+                                <Input
+                                    value={config.flash_sale?.end_time || ''}
+                                    onChange={e => setConfig({
+                                        ...config,
+                                        flash_sale: { ...(config.flash_sale || {}), end_time: e.target.value }
+                                    })}
+                                    placeholder="2025-12-31 23:59:59"
+                                />
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

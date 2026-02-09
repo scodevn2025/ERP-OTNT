@@ -26,11 +26,15 @@ import AccountsPage from "@/pages/admin/AccountsPage";
 import JournalPage from "@/pages/admin/JournalPage";
 import ReportsPage from "@/pages/admin/ReportsPage";
 import StoreSettingsPage from "@/pages/admin/StoreSettingsPage";
+import BlogsManagementPage from "@/pages/admin/BlogsManagementPage";
+import BlogEditorPage from "@/pages/admin/BlogEditorPage";
+import UsersManagementPage from "@/pages/admin/UsersManagementPage";
 
 // Store Pages
 import HomePage from "@/pages/store/HomePage";
 import ProductsListPage from "@/pages/store/ProductsListPage";
 import ProductDetailPage from "@/pages/store/ProductDetailPage";
+import BlogDetailPage from "@/pages/store/BlogDetailPage";
 
 function App() {
   return (
@@ -57,6 +61,10 @@ function App() {
               <Route path="journal" element={<JournalPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<StoreSettingsPage />} />
+              <Route path="blogs" element={<BlogsManagementPage />} />
+              <Route path="blogs/new" element={<BlogEditorPage />} />
+              <Route path="blogs/edit/:id" element={<BlogEditorPage />} />
+              <Route path="users" element={<UsersManagementPage />} />
 
               {/* Future Modules */}
               <Route path="repairs" element={<DashboardPage />} />
@@ -68,6 +76,7 @@ function App() {
               <Route index element={<HomePage />} />
               <Route path="products" element={<ProductsListPage />} />
               <Route path="products/:slug" element={<ProductDetailPage />} />
+              <Route path="blog/:slug" element={<BlogDetailPage />} />
               <Route path="contact" element={<HomePage />} />
             </Route>
 

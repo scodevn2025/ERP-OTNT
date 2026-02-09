@@ -8,8 +8,11 @@ import bcrypt
 from database import get_session, engine
 from sql_models import (
     User, Category, Brand, Product, Warehouse, StockBalance,
-    SerialItem, Customer, SalesOrder, Account, JournalEntry
+    SerialItem, Customer, SalesOrder, Account, JournalEntry,
+    Branch
 )
+from pydantic import BaseModel, EmailStr, ConfigDict
+from typing import List, Optional, Literal
 from dependencies import get_current_user, require_admin
 from sqlalchemy import text
 
@@ -277,3 +280,80 @@ async def reset_admin(session: AsyncSession = Depends(get_session)):
 
     await session.commit()
     return {"message": "Admin account reset. Email: admin@otnt.vn, Password: Admin@123"}
+
+# ==================== USER MANAGEMENT ====================
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    role: Optional[Literal['admin', 'manager', 'staff', 'technician']] = None
+    is_active: Optional[bool] = None
+    branch_id: Optional[str] = None
+
+class UserListResponse(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    phone: Optional[str] = None
+    role: str
+    is_active: bool
+    branch_id: Optional[str] = None
+    created_at: str
+
+@router.get("/admin/users", response_model=List[UserListResponse])
+async def list_users(
+    session: AsyncSession = Depends(get_session),
+    user=Depends(require_admin)
+):
+    """List all users for admin management."""
+    statement = select(User).order_by(User.full_name)
+    result = await session.exec(statement)
+    users = result.all()
+    
+    # User model has created_at as datetime, need to ensure it's string for response
+    # Actually UserResponse in auth.py uses str, sql_models.py might use datetime
+    # Let's check sql_models.py usage if possible or just dump
+    return [UserListResponse(**u.model_dump()) for u in users]
+
+@router.put("/admin/users/{user_id}", response_model=UserListResponse)
+async def update_user(
+    user_id: str,
+    data: UserUpdate,
+    session: AsyncSession = Depends(get_session),
+    admin=Depends(require_admin)
+):
+    """Update a user's role, status, or details."""
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Guard: Prevent deactivating the last admin (or self)
+    if user.id == admin.id and data.is_active is False:
+        raise HTTPException(status_code=400, detail="You cannot deactivate your own account")
+
+    update_data = data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(user, key, value)
+        
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return UserListResponse(**user.model_dump())
+
+@router.delete("/admin/users/{user_id}")
+async def delete_user(
+    user_id: str,
+    session: AsyncSession = Depends(get_session),
+    admin=Depends(require_admin)
+):
+    """Delete a user account."""
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if user.id == admin.id:
+        raise HTTPException(status_code=400, detail="You cannot delete your own account")
+        
+    await session.delete(user)
+    await session.commit()
+    return {"message": "User deleted successfully"}

@@ -60,6 +60,13 @@ class UserResponse(BaseModel):
     is_active: bool = True
     created_at: str
 
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    role: Optional[Literal['admin', 'manager', 'staff', 'technician']] = None
+    is_active: Optional[bool] = None
+    branch_id: Optional[str] = None
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -422,6 +429,18 @@ class HeroBanner(BaseModel):
     subtitle: Optional[str] = ""
     link: Optional[str] = "/"
 
+class PromoSection(BaseModel):
+    title: Optional[str] = ""
+    image_url: str
+    link: Optional[str] = "/"
+    tag: Optional[str] = ""
+
+class FlashSaleConfig(BaseModel):
+    is_active: bool = False
+    title: str = "FLASH SALE"
+    end_time: Optional[str] = None
+    product_ids: List[str] = []
+
 class StoreConfig(BaseModel):
     site_name: str = "ONG TRÙM NỘI TRỢ"
     tagline: str = "Robot hút bụi chính hãng"
@@ -436,6 +455,9 @@ class StoreConfig(BaseModel):
     youtube_url: Optional[str] = "#"
     instagram_url: Optional[str] = "#"
     hero_banners: List[HeroBanner] = []
+    promo_sections: List[PromoSection] = []
+    flash_sale: FlashSaleConfig = FlashSaleConfig()
+    featured_categories: List[str] = [] # List of category IDs
 
 class StoreConfigResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -452,6 +474,35 @@ class StoreConfigResponse(BaseModel):
     youtube_url: Optional[str] = "#"
     instagram_url: Optional[str] = "#"
     hero_banners: List[HeroBanner] = []
+    promo_sections: List[PromoSection] = []
+    flash_sale: FlashSaleConfig = FlashSaleConfig()
+    featured_categories: List[str] = []
+    updated_at: str
+
+# Blog Models
+class BlogCreate(BaseModel):
+    title: str
+    slug: str
+    excerpt: Optional[str] = None
+    content: str
+    feature_image: Optional[str] = None
+    category: Optional[str] = "news"
+    tags: List[str] = []
+    is_published: bool = True
+
+class BlogResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    slug: str
+    excerpt: Optional[str] = None
+    content: str
+    feature_image: Optional[str] = None
+    category: Optional[str] = "news"
+    tags: List[str] = []
+    is_published: bool = True
+    view_count: int = 0
+    created_at: str
     updated_at: str
 
 # ==================== AUTH HELPERS ====================
@@ -683,6 +734,67 @@ async def update_store_config(data: StoreConfig, user: dict = Depends(require_ad
     
     config = await db.store_config.find_one({"type": "general"}, {"_id": 0})
     return StoreConfigResponse(**config)
+
+# ==================== BLOG ROUTES ====================
+
+@api_router.get("/store/blogs", response_model=List[BlogResponse])
+async def list_blogs_public(category: Optional[str] = None, limit: int = 10):
+    query = {"is_published": True}
+    if category:
+        query["category"] = category
+    blogs = await db.blogs.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return [BlogResponse(**b) for b in blogs]
+
+@api_router.get("/store/blogs/{slug}", response_model=BlogResponse)
+async def get_blog_public(slug: str):
+    blog = await db.blogs.find_one({"slug": slug, "is_published": True}, {"_id": 0})
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    # Increment view count (fire and forget)
+    await db.blogs.update_one({"slug": slug}, {"$inc": {"view_count": 1}})
+    return BlogResponse(**blog)
+
+@api_router.get("/admin/blogs", response_model=List[BlogResponse])
+async def list_blogs_admin(user: dict = Depends(require_admin)):
+    blogs = await db.blogs.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [BlogResponse(**b) for b in blogs]
+
+@api_router.post("/admin/blogs", response_model=BlogResponse)
+async def create_blog(data: BlogCreate, user: dict = Depends(require_admin)):
+    existing = await db.blogs.find_one({"slug": data.slug})
+    if existing:
+        raise HTTPException(status_code=400, detail="Blog slug already exists")
+    
+    blog_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "id": blog_id,
+        **data.model_dump(),
+        "view_count": 0,
+        "created_at": now,
+        "updated_at": now
+    }
+    await db.blogs.insert_one(doc)
+    return BlogResponse(**{k: v for k, v in doc.items() if k != '_id'})
+
+@api_router.put("/admin/blogs/{blog_id}", response_model=BlogResponse)
+async def update_blog(blog_id: str, data: BlogCreate, user: dict = Depends(require_admin)):
+    now = datetime.now(timezone.utc).isoformat()
+    result = await db.blogs.find_one_and_update(
+        {"id": blog_id},
+        {"$set": {**data.model_dump(), "updated_at": now}},
+        return_document=True
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    return BlogResponse(**{k: v for k, v in result.items() if k != '_id'})
+
+@api_router.delete("/admin/blogs/{blog_id}")
+async def delete_blog(blog_id: str, user: dict = Depends(require_admin)):
+    result = await db.blogs.delete_one({"id": blog_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    return {"message": "Blog post deleted"}
 
 @api_router.put("/admin/categories/{category_id}", response_model=CategoryResponse)
 async def update_category(category_id: str, data: CategoryCreate, user: dict = Depends(require_admin)):
@@ -2931,6 +3043,86 @@ async def deliver_repair(ticket_id: str, user: dict = Depends(get_current_user))
     # Ideally: Create Journal Entry here (Dr Cash / Cr Service Revenue)
     
     return {"message": "Device delivered to customer"}
+
+# ==================== USER MANAGEMENT ====================
+
+@api_router.get("/admin/users", response_model=List[UserResponse])
+async def list_users(user: dict = Depends(require_admin)):
+    """List all users for admin management."""
+    users = await db.users.find({}, {"_id": 0, "password": 0}).sort("full_name", 1).to_list(1000)
+    return [UserResponse(**u) for u in users]
+
+@api_router.post("/admin/users", response_model=UserResponse)
+async def create_user(
+    data: UserCreate,
+    admin: dict = Depends(require_admin)
+):
+    """Admin creates a new user."""
+    existing = await db.users.find_one({"email": data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    user_doc = {
+        "id": user_id,
+        "email": data.email,
+        "hashed_password": hash_password(data.password),
+        "full_name": data.full_name,
+        "phone": data.phone,
+        "role": data.role,
+        "branch_id": None,
+        "is_active": True,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.users.insert_one(user_doc)
+    
+    return UserResponse(
+        id=user_id, email=data.email, full_name=data.full_name,
+        phone=data.phone, role=data.role, is_active=True, created_at=now
+    )
+
+@api_router.put("/admin/users/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: str,
+    data: UserUpdate,
+    admin: dict = Depends(require_admin)
+):
+    """Update a user's role, status, or details."""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Guard: Prevent deactivating self
+    if user['id'] == admin['id'] and data.is_active is False:
+        raise HTTPException(status_code=400, detail="You cannot deactivate your own account")
+
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_data})
+    
+    updated_user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    return UserResponse(**updated_user)
+
+@api_router.delete("/admin/users/{user_id}")
+async def delete_user(
+    user_id: str,
+    admin: dict = Depends(require_admin)
+):
+    """Delete a user account."""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if user['id'] == admin['id']:
+        raise HTTPException(status_code=400, detail="You cannot delete your own account")
+        
+    await db.users.delete_one({"id": user_id})
+    return {"message": "User deleted successfully"}
 
 # ==================== SEED DATA ====================
 
