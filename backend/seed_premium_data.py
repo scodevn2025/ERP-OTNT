@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 import json
 
 # Configuration
-MONGO_URL = "mongodb://localhost:27017" # Update if different on server
-DB_NAME = "erp_v2" # Update if different
+MONGO_URL = os.environ.get('MONGO_URL', "mongodb://localhost:27017")
+DB_NAME = os.environ.get('DB_NAME', "erp_v2")
 AUD_TO_VND = 16500
 
 async def seed_premium_data():
