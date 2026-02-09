@@ -527,7 +527,7 @@ export default function ProductsPage() {
             <div className="p-12 text-center">
               <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Chưa có sản phẩm nào</p>
-              <Button onClick={openCreateDialog} variant="outline" className="mt-4">
+              <Button onClick={openCreateMode} variant="outline" className="mt-4">
                 Thêm sản phẩm đầu tiên
               </Button>
             </div>
