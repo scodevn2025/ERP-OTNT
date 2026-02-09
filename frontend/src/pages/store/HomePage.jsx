@@ -1,248 +1,394 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  ArrowRight,
-  ShoppingCart,
   ChevronRight,
+  ChevronLeft,
+  ShoppingCart,
+  Zap,
+  FileText,
+  Search,
+  Phone,
   Truck,
   Shield,
-  Zap,
-  Star,
   Gift,
-  Timer,
-  FileText
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { storeAPI } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import {
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { useStore } from '@/contexts/StoreContext';
 
-// --- Helpers ---
-const DiscountBadge = ({ price, original }) => {
-  const percent = original && original > price ? Math.round(((original - price) / original) * 100) : 0;
-  return (
-    <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-      <span className="bg-[#10b981] text-white font-bold text-[10px] px-1.5 py-0.5 rounded shadow-sm scale-90 origin-left uppercase">
-        MỚI
-      </span>
-      {percent > 0 && (
-        <span className="bg-[#ee2d24] text-white font-bold text-[10px] px-1.5 py-0.5 rounded shadow-sm scale-90 origin-left whitespace-nowrap">
-          -{percent}%
-        </span>
-      )}
-    </div>
-  );
-};
+// --- Brand Logos ---
+const BRANDS = [
+  { name: 'Dreame', slug: 'dreame', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Dreame_logo.svg/200px-Dreame_logo.svg.png' },
+  { name: 'Roborock', slug: 'roborock', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Roborock_logo.svg/200px-Roborock_logo.svg.png' },
+  { name: 'Ecovacs', slug: 'ecovacs', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Ecovacs_logo.svg/200px-Ecovacs_logo.svg.png' },
+  { name: 'Tineco', slug: 'tineco', logo: 'https://cdn.shopify.com/s/files/1/0549/5190/4653/files/tineco-logo.png?v=1614816546' },
+  { name: 'Xiaomi', slug: 'xiaomi', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Xiaomi_logo.svg/200px-Xiaomi_logo.svg.png' },
+];
 
-const ProductGridItem = ({ product }) => {
-  const originalPrice = product.price * 1.35; // Mock original price
-  const discountAmount = originalPrice - product.price;
-  const discountPercent = Math.round((discountAmount / originalPrice) * 100);
+// --- Popular Searches ---
+const POPULAR_SEARCHES = [
+  'Dreame X50 Ultra',
+  'Dreame X40 Ultra',
+  'Roborock S8 Pro',
+  'Dreame L40 Ultra',
+  'Ecovacs X2 Omni',
+];
+
+// --- Product Card Component ---
+const ProductCard = ({ product }) => {
+  const originalPrice = product.price * 1.25;
+  const discount = Math.round(((originalPrice - product.price) / originalPrice) * 100);
 
   return (
-    <div className="bg-white border-0 hover:shadow-2xl transition-all duration-500 rounded-2xl flex flex-col relative group overflow-hidden h-full">
-      <DiscountBadge price={product.price} original={originalPrice} />
-      <div className="p-4 aspect-square flex items-center justify-center relative bg-[#f8fafc]">
-        <img
-          src={product.images?.[0] || 'https://via.placeholder.com/300'}
-          alt={product.name}
-          className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-700 p-4"
-        />
-      </div>
-      <div className="p-4 flex-1 flex flex-col">
-        <h3 className="text-gray-800 font-bold text-sm line-clamp-2 mb-3 leading-snug group-hover:text-primary transition-colors min-h-[40px]">
-          {product.name}
-        </h3>
-        <div className="space-y-1 mb-4">
-          <div className="text-gray-400 text-xs flex items-center gap-1">
-            Giá gốc: <span className="line-through">{formatCurrency(originalPrice)}</span>
+    <Link to={`/products/${product.slug}`} className="group block h-full">
+      <div className="bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col">
+        {/* Discount Badge */}
+        {discount > 0 && (
+          <div className="absolute top-3 left-3 z-10">
+            <Badge className="bg-red-500 text-white font-bold text-xs px-2 py-1 rounded-md border-none">
+              -{discount}%
+            </Badge>
           </div>
-          <div className="text-[#ee2d24] font-black text-base lg:text-lg flex items-center gap-1">
-            Giá KM: <span>{formatCurrency(product.price)}</span>
-          </div>
-          <div className="text-[#10b981] font-bold text-[10px] lg:text-xs">
-            Tiết kiệm: {formatCurrency(discountAmount)} (-{discountPercent}%)
+        )}
+
+        {/* Product Image */}
+        <div className="relative aspect-square p-4 bg-gradient-to-b from-gray-50 to-white overflow-hidden">
+          <img
+            src={product.images?.[0] || 'https://via.placeholder.com/300'}
+            alt={product.name}
+            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+          />
+        </div>
+
+        {/* Product Info */}
+        <div className="p-4 flex-1 flex flex-col">
+          <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-3 group-hover:text-primary transition-colors min-h-[40px]">
+            {product.name}
+          </h3>
+
+          <div className="mt-auto space-y-2">
+            {/* Original Price */}
+            <div className="text-gray-400 text-xs line-through">
+              {formatCurrency(originalPrice)}
+            </div>
+
+            {/* Sale Price */}
+            <div className="text-primary font-black text-lg">
+              {formatCurrency(product.price)}
+            </div>
+
+            {/* Quick Add Button */}
+            <Button
+              className="w-full bg-primary hover:bg-red-700 text-white font-bold rounded-lg py-2 text-sm shadow-md shadow-primary/20 flex items-center justify-center gap-2"
+              onClick={(e) => {
+                e.preventDefault();
+                // TODO: Add to cart
+              }}
+            >
+              <ShoppingCart size={14} />
+              Mua ngay
+            </Button>
           </div>
         </div>
-        <Button className="w-full bg-[#ee2d24] hover:bg-red-700 text-white font-bold rounded-xl py-5 shadow-lg shadow-red-200 transition-all active:scale-95 flex items-center justify-center gap-2">
-          <ShoppingCart size={16} fill="white" />
-          THÊM VÀO GIỎ
-        </Button>
       </div>
-    </div>
+    </Link>
   );
 };
 
-const SectionTitle = ({ title, link, icon }) => (
-  <div className="flex items-center justify-between py-4 border-b-2 border-primary mb-4 bg-white px-0 md:px-0">
-    <div className="flex items-center gap-2">
-      <div className="bg-primary text-white p-1.5 rounded-sm">{icon}</div>
-      <h2 className="text-lg md:text-xl font-bold text-gray-800 uppercase">{title}</h2>
-    </div>
-    {link && (
-      <Link to={link} className="text-blue-600 text-sm hover:underline flex items-center font-medium">
-        Xem tất cả <ChevronRight size={16} />
-      </Link>
-    )}
-  </div>
-);
+// --- Horizontal Scroll Section ---
+const ProductCarousel = ({ title, products, icon, loading, link }) => {
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
-// --- Sections ---
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
 
-const SidebarMenu = () => {
-  const menus = [
-    { label: "Robot Hút Bụi Lau Nhà", icon: "🤖", link: "/products?type=robot" },
-    { label: "Máy Hút Bụi Cầm Tay", icon: "🧹", link: "/products?type=goods" },
-    { label: "Máy Lau Sàn Thông Minh", icon: "🧼", link: "/products?type=floor" },
-    { label: "Robot Lau Kính", icon: "🪟", link: "/products?type=glass" },
-    { label: "Máy Lọc Không Khí", icon: "☁️", link: "/products?type=air" },
-    { label: "Phụ Kiện Chính Hãng", icon: "🔩", link: "/products?type=accessory" },
-    { label: "Linh Kiện Thay Thế", icon: "🛠️", link: "/products?type=parts" },
-    { label: "Dịch Vụ Sửa Chữa", icon: "🚑", link: "/services" },
-  ];
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 300;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const ref = scrollRef.current;
+    if (ref) {
+      ref.addEventListener('scroll', checkScroll);
+      return () => ref.removeEventListener('scroll', checkScroll);
+    }
+  }, [products]);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 h-full py-2">
-      {menus.map((m, i) => (
-        <Link key={i} to={m.link} className="flex items-center gap-3 px-4 py-3 hover:bg-primary/10 hover:text-primary hover:font-bold text-gray-700 transition-all border-b border-gray-50 last:border-0 text-sm">
-          <span className="text-lg w-6 text-center">{m.icon}</span>
-          <span>{m.label}</span>
-          <ChevronRight size={14} className="ml-auto opacity-30" />
-        </Link>
-      ))}
-    </div>
-  );
-}
+    <section className="mb-10">
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-primary">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary text-white p-2 rounded-lg">
+            {icon}
+          </div>
+          <h2 className="text-lg md:text-xl font-black text-gray-800 uppercase tracking-tight">
+            {title}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Scroll Buttons */}
+          <button
+            onClick={() => scroll('left')}
+            disabled={!canScrollLeft}
+            className={cn(
+              "p-2 rounded-full border transition-all",
+              canScrollLeft
+                ? "bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                : "bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed"
+            )}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={() => scroll('right')}
+            disabled={!canScrollRight}
+            className={cn(
+              "p-2 rounded-full border transition-all",
+              canScrollRight
+                ? "bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                : "bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed"
+            )}
+          >
+            <ChevronRight size={20} />
+          </button>
+          {link && (
+            <Link to={link} className="text-primary text-sm font-semibold hover:underline flex items-center ml-2">
+              Xem tất cả <ChevronRight size={16} />
+            </Link>
+          )}
+        </div>
+      </div>
 
-const MainBanner = () => {
+      {/* Products Scroll Container */}
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {loading ? (
+          [...Array(6)].map((_, i) => (
+            <div key={i} className="flex-shrink-0 w-[200px] md:w-[220px]">
+              <div className="bg-gray-100 rounded-xl h-[320px] animate-pulse" />
+            </div>
+          ))
+        ) : (
+          products.map(product => (
+            <div key={product.id} className="flex-shrink-0 w-[200px] md:w-[220px] relative">
+              <ProductCard product={product} />
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+};
+
+// --- Hero Banner Slider ---
+const HeroBanner = () => {
   const { settings } = useStore();
+  const [current, setCurrent] = useState(0);
+
   const defaultSlides = [
-    "https://images.unsplash.com/photo-1589820296156-2454bb8a6d54?auto=format&fit=crop&q=80&w=1200&h=400",
-    "https://images.unsplash.com/photo-1558317374-a3547dda1609?auto=format&fit=crop&q=80&w=1200&h=400"
+    { image: 'https://images.unsplash.com/photo-1589820296156-2454bb8a6d54?auto=format&fit=crop&q=80&w=1400&h=500', title: 'Robot Hút Bụi Cao Cấp' },
+    { image: 'https://images.unsplash.com/photo-1558317374-a3547dda1609?auto=format&fit=crop&q=80&w=1400&h=500', title: 'Ưu Đãi Đặc Biệt' }
   ];
 
   const slides = settings?.hero_banners?.length > 0
-    ? settings.hero_banners.map(b => b.image_url)
+    ? settings.hero_banners.map(b => ({ image: b.image_url, title: b.title || '' }))
     : defaultSlides;
-
-  const [current, setCurrent] = useState(0);
 
   useEffect(() => {
     if (slides.length <= 1) return;
-    const t = setInterval(() => setCurrent(c => (c + 1) % slides.length), 5000);
-    return () => clearInterval(t);
-  }, [slides]);
+    const timer = setInterval(() => setCurrent(c => (c + 1) % slides.length), 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
 
   return (
-    <div className="relative h-[300px] md:h-[450px] rounded-xl overflow-hidden shadow-xl group">
-      {slides.map((src, i) => (
-        <img
+    <div className="relative h-[280px] md:h-[420px] rounded-2xl overflow-hidden shadow-2xl">
+      {slides.map((slide, i) => (
+        <div
           key={i}
-          src={src}
-          alt="Banner"
           className={cn(
-            "absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out",
+            "absolute inset-0 transition-all duration-1000",
             i === current ? "opacity-100 scale-100" : "opacity-0 scale-110"
           )}
-        />
+        >
+          <img
+            src={slide.image}
+            alt={slide.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" />
+        </div>
       ))}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+
+      {/* Slide Indicators */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
         {slides.map((_, i) => (
           <button
             key={i}
             onClick={() => setCurrent(i)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? 'bg-white w-8' : 'bg-white/40 w-2 hover:bg-white/60'}`}
+            className={cn(
+              "h-2 rounded-full transition-all",
+              i === current ? "bg-white w-8" : "bg-white/50 w-2 hover:bg-white/70"
+            )}
           />
         ))}
       </div>
-      {/* Gradient Overlay for better text visibility if any */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-    </div>
-  );
-}
-
-const BlogCard = ({ blog }) => (
-  <Link to={`/blog/${blog.slug}`} className="group h-full">
-    <div className="bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col h-full">
-      <div className="aspect-video relative overflow-hidden">
-        <img
-          src={blog.feature_image || 'https://via.placeholder.com/400x225'}
-          alt={blog.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-        />
-        <Badge className="absolute top-3 left-3 bg-primary/90 backdrop-blur-sm border-none">
-          {blog.category === 'guide' ? 'Hướng dẫn' : blog.category === 'promo' ? 'Khuyến mãi' : 'Tin tức'}
-        </Badge>
-      </div>
-      <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-bold text-gray-800 line-clamp-2 mb-2 group-hover:text-primary transition-colors">
-          {blog.title}
-        </h3>
-        <p className="text-gray-500 text-xs mb-4 line-clamp-2 flex-1">
-          {blog.excerpt || 'Đọc thêm chi tiết về bài viết này tại website...'}
-        </p>
-        <div className="flex items-center justify-between text-[10px] text-gray-400 font-medium uppercase tracking-wider">
-          <span>{new Date(blog.created_at).toLocaleDateString('vi-VN')}</span>
-          <span className="flex items-center gap-1"><Timer size={10} /> {blog.view_count || 0} lượt xem</span>
-        </div>
-      </div>
-    </div>
-  </Link>
-);
-
-const FlashSaleCountdown = ({ endTime }) => {
-  const [timeLeft, setTimeLeft] = useState({ h: '00', m: '00', s: '00' });
-
-  useEffect(() => {
-    if (!endTime) return;
-    const updateTimer = () => {
-      const target = new Date(endTime).getTime();
-      const now = new Date().getTime();
-      const diff = target - now;
-
-      if (diff <= 0) {
-        setTimeLeft({ h: '00', m: '00', s: '00' });
-        return false;
-      }
-
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft({
-        h: h.toString().padStart(2, '0'),
-        m: m.toString().padStart(2, '0'),
-        s: s.toString().padStart(2, '0')
-      });
-      return true;
-    };
-
-    updateTimer();
-    const timer = setInterval(() => {
-      if (!updateTimer()) clearInterval(timer);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [endTime]);
-
-  return (
-    <div className="flex gap-2 items-center">
-      <div className="bg-black text-white px-2 py-1 rounded-md text-xl font-black shadow-lg border border-white/20 min-w-[40px] text-center">{timeLeft.h}</div>
-      <span className="text-white font-black text-2xl">:</span>
-      <div className="bg-black text-white px-2 py-1 rounded-md text-xl font-black shadow-lg border border-white/20 min-w-[40px] text-center">{timeLeft.m}</div>
-      <span className="text-white font-black text-2xl">:</span>
-      <div className="bg-black text-white px-2 py-1 rounded-md text-xl font-black shadow-lg border border-white/20 min-w-[40px] text-center">{timeLeft.s}</div>
     </div>
   );
 };
 
+// --- Popular Searches Section ---
+const PopularSearches = () => (
+  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+    <div className="flex items-center gap-2 mb-3">
+      <Search size={16} className="text-primary" />
+      <span className="font-bold text-sm text-gray-700">Tìm kiếm phổ biến</span>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {POPULAR_SEARCHES.map((term, i) => (
+        <Link
+          key={i}
+          to={`/products?search=${encodeURIComponent(term)}`}
+          className="px-3 py-1.5 bg-gray-50 hover:bg-primary hover:text-white text-gray-600 text-xs font-medium rounded-full transition-colors border border-gray-100"
+        >
+          {term}
+        </Link>
+      ))}
+    </div>
+  </div>
+);
+
+// --- Brand Section ---
+const BrandSection = () => (
+  <section className="mb-10">
+    <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-primary">
+      <div className="flex items-center gap-3">
+        <div className="bg-primary text-white p-2 rounded-lg">
+          <Gift size={18} />
+        </div>
+        <h2 className="text-lg md:text-xl font-black text-gray-800 uppercase tracking-tight">
+          Thương hiệu nổi bật
+        </h2>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
+      {BRANDS.map((brand) => (
+        <Link
+          key={brand.slug}
+          to={`/products?brand=${brand.slug}`}
+          className="bg-white rounded-xl p-6 border border-gray-100 hover:border-primary/30 hover:shadow-lg transition-all flex items-center justify-center group"
+        >
+          <img
+            src={brand.logo}
+            alt={brand.name}
+            className="h-8 md:h-10 object-contain grayscale group-hover:grayscale-0 transition-all opacity-60 group-hover:opacity-100"
+          />
+        </Link>
+      ))}
+    </div>
+  </section>
+);
+
+// --- Service Features ---
+const ServiceFeatures = () => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+    {[
+      { icon: <Truck size={24} />, title: 'Giao hàng miễn phí', desc: 'Đơn từ 500K' },
+      { icon: <Shield size={24} />, title: 'Bảo hành chính hãng', desc: '12-24 tháng' },
+      { icon: <RefreshCw size={24} />, title: 'Đổi trả dễ dàng', desc: 'Trong 7 ngày' },
+      { icon: <Phone size={24} />, title: 'Hỗ trợ 24/7', desc: '0826.123.678' },
+    ].map((item, i) => (
+      <div key={i} className="bg-white rounded-xl p-4 border border-gray-100 flex items-center gap-3 hover:shadow-md transition-shadow">
+        <div className="text-primary">{item.icon}</div>
+        <div>
+          <div className="font-bold text-sm text-gray-800">{item.title}</div>
+          <div className="text-xs text-gray-500">{item.desc}</div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// --- Blog Section ---
+const BlogSection = ({ blogs, loading }) => (
+  <section className="mb-10">
+    <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-primary">
+      <div className="flex items-center gap-3">
+        <div className="bg-primary text-white p-2 rounded-lg">
+          <FileText size={18} />
+        </div>
+        <h2 className="text-lg md:text-xl font-black text-gray-800 uppercase tracking-tight">
+          Tin tức & Hướng dẫn
+        </h2>
+      </div>
+      <Link to="/blog" className="text-primary text-sm font-semibold hover:underline flex items-center">
+        Xem tất cả <ChevronRight size={16} />
+      </Link>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {loading ? (
+        [...Array(4)].map((_, i) => (
+          <div key={i} className="bg-gray-100 rounded-xl h-[280px] animate-pulse" />
+        ))
+      ) : blogs.length === 0 ? (
+        <div className="col-span-full py-16 text-center bg-white rounded-xl border border-dashed text-gray-400">
+          <FileText className="mx-auto mb-3 opacity-30" size={40} />
+          Chưa có bài viết nào
+        </div>
+      ) : (
+        blogs.map(blog => (
+          <Link key={blog.id} to={`/blog/${blog.slug}`} className="group">
+            <div className="bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all h-full flex flex-col">
+              <div className="aspect-video overflow-hidden relative">
+                <img
+                  src={blog.feature_image || 'https://via.placeholder.com/400x225'}
+                  alt={blog.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <Badge className="absolute top-2 left-2 bg-primary/90 border-none text-[10px]">
+                  {blog.category === 'guide' ? 'Hướng dẫn' : blog.category === 'promo' ? 'Khuyến mãi' : 'Tin tức'}
+                </Badge>
+              </div>
+              <div className="p-4 flex-1 flex flex-col">
+                <h3 className="font-semibold text-gray-800 line-clamp-2 mb-2 text-sm group-hover:text-primary transition-colors">
+                  {blog.title}
+                </h3>
+                <p className="text-gray-500 text-xs line-clamp-2 flex-1">
+                  {blog.excerpt || 'Đọc thêm chi tiết...'}
+                </p>
+              </div>
+            </div>
+          </Link>
+        ))
+      )}
+    </div>
+  </section>
+);
+
+// --- Main HomePage Component ---
 export default function HomePage() {
   const { settings } = useStore();
   const [products, setProducts] = useState([]);
@@ -253,141 +399,119 @@ export default function HomePage() {
     const fetchData = async () => {
       try {
         const [pRes, bRes] = await Promise.all([
-          storeAPI.getProducts({ limit: 12 }),
+          storeAPI.getProducts({ limit: 20 }),
           storeAPI.getBlogs({ limit: 4 })
         ]);
         setProducts(pRes.data || []);
         setBlogs(bRes.data || []);
       } catch (e) {
-        console.error(e);
+        console.error('Failed to fetch data:', e);
       } finally {
         setLoading(false);
       }
-    }
+    };
     fetchData();
   }, []);
 
-  const promoItems = settings?.promo_sections?.length > 0
-    ? settings.promo_sections.slice(0, 3)
-    : [
-      { tag: "GIÁ TỐT", title: "Cam kết chính hãng", image_url: "https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?w=400&h=200&fit=crop", link: "#" },
-      { tag: "DỊCH VỤ", title: "Bảo hành 24 tháng", image_url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=200&fit=crop", link: "#" },
-      { tag: "UÝ TÍN", title: "Lỗi 1 đổi 1", image_url: "https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=400&h=200&fit=crop", link: "#" }
-    ];
+  // Split products for different sections
+  const newProducts = products.slice(0, 10);
+  const robotProducts = products.filter(p => p.product_type === 'robot').slice(0, 10);
+  const accessoryProducts = products.filter(p => p.product_type === 'accessory' || p.product_type === 'goods').slice(0, 10);
 
   return (
-    <div className="bg-[#f8fafc] pb-16">
-      {/* Top Hero Section: Menu + Banner */}
+    <div className="bg-[#f5f5f7] min-h-screen">
+      {/* Hero Section */}
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Sidebar Menu */}
-          <div className="hidden lg:block col-span-1">
-            <SidebarMenu />
-            <div className="mt-6 bg-white rounded-xl border border-dashed border-primary/30 p-4 text-center">
-              <p className="text-sm font-bold text-primary italic mb-1">HOTLINE TƯ VẤN</p>
-              <a href={`tel:${settings?.contact_phone}`} className="text-xl font-black text-gray-800 tracking-tight hover:text-primary transition-colors">
-                {settings?.contact_phone || "0826.123.678"}
+          {/* Left Sidebar - Categories */}
+          <div className="hidden lg:block">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="bg-primary text-white px-4 py-3 font-bold flex items-center gap-2">
+                <Zap size={18} />
+                DANH MỤC SẢN PHẨM
+              </div>
+              <nav className="py-2">
+                {[
+                  { label: 'Robot Hút Bụi Lau Nhà', icon: '🤖', link: '/products?type=robot' },
+                  { label: 'Máy Hút Bụi Cầm Tay', icon: '🧹', link: '/products?type=goods' },
+                  { label: 'Máy Lau Sàn', icon: '🧼', link: '/products?type=floor' },
+                  { label: 'Robot Lau Kính', icon: '🪟', link: '/products?type=glass' },
+                  { label: 'Máy Lọc Không Khí', icon: '☁️', link: '/products?type=air' },
+                  { label: 'Phụ Kiện Chính Hãng', icon: '🔩', link: '/products?type=accessory' },
+                  { label: 'Linh Kiện Thay Thế', icon: '🛠️', link: '/products?type=parts' },
+                ].map((item, i) => (
+                  <Link
+                    key={i}
+                    to={item.link}
+                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 hover:text-primary text-gray-700 transition-colors text-sm border-b border-gray-50 last:border-0"
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="font-medium">{item.label}</span>
+                    <ChevronRight size={14} className="ml-auto opacity-30" />
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* Hotline Box */}
+            <div className="mt-4 bg-gradient-to-r from-primary to-red-600 rounded-xl p-4 text-white text-center">
+              <Phone size={24} className="mx-auto mb-2" />
+              <div className="text-xs opacity-90 mb-1">HOTLINE TƯ VẤN</div>
+              <a href={`tel:${settings?.contact_phone || '0826123678'}`} className="text-xl font-black tracking-tight">
+                {settings?.contact_phone || '0826.123.678'}
               </a>
             </div>
           </div>
-          {/* Main Content Area */}
-          <div className="col-span-1 lg:col-span-3 space-y-4">
-            <MainBanner />
-            {/* 3-Grid Promo Banners */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {promoItems.map((promo, i) => (
-                <Link key={i} to={promo.link} className="relative h-28 md:h-32 rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-all">
-                  <img src={promo.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors" />
-                  <div className="absolute inset-0 p-4 flex flex-col justify-end">
-                    <Badge variant="secondary" className="w-fit text-[10px] h-4 mb-1 bg-white/90 text-primary font-bold border-none">{promo.tag || "ƯU ĐÃI"}</Badge>
-                    <p className="text-white font-bold text-sm drop-shadow-md">{promo.title}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+
+          {/* Main Banner Area */}
+          <div className="lg:col-span-3 space-y-4">
+            <HeroBanner />
+            <PopularSearches />
           </div>
         </div>
       </div>
 
-      {/* Feature: Flash Sale */}
-      {settings?.flash_sale?.is_active && products.length > 0 && (
-        <div className="bg-gradient-to-r from-red-600 via-primary to-orange-500 py-8 mb-12 shadow-inner">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-              <div className="flex items-center gap-4 text-white">
-                <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md shadow-lg border border-white/30">
-                  <Zap className="text-yellow-300 fill-yellow-300 w-8 h-8 animate-pulse" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-black italic uppercase tracking-tighter leading-none">{settings?.flash_sale?.title || "FLASH SALE"}</h2>
-                  <p className="text-white/80 text-xs font-medium uppercase mt-1">Kết thúc sau:</p>
-                </div>
-                <FlashSaleCountdown endTime={settings?.flash_sale?.end_time} />
-              </div>
-              <Button variant="outline" className="bg-white/10 border-white/40 text-white hover:bg-white hover:text-primary font-bold rounded-full px-8 h-12 shadow-lg backdrop-blur-md">
-                XEM TẤT CẢ <ChevronRight className="ml-2" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {loading ? [1, 2, 3, 4, 5].map(i => <div key={i} className="h-72 bg-white/10 rounded-2xl animate-pulse" />) :
-                products.slice(0, 5).map(p => (
-                  <div key={p.id} className="bg-white rounded-2xl p-2 hover:translate-y-[-4px] transition-all duration-300 shadow-md">
-                    <ProductGridItem product={p} />
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Main Content */}
+      <div className="container mx-auto px-4 pb-12">
+        {/* Service Features */}
+        <ServiceFeatures />
 
-      {/* Category: Robot Hut Bui */}
-      <div className="container mx-auto px-4 mb-16">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Vertical Aesthetic Banner */}
-          <div className="hidden lg:block w-72 flex-shrink-0">
-            <div className="relative h-full rounded-2xl overflow-hidden shadow-2xl group">
-              <img
-                src="https://images.unsplash.com/photo-1589820296156-2454bb8a6d54?w=400&h=800&fit=crop"
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent flex flex-col justify-end p-8 text-white">
-                <h3 className="text-4xl font-black mb-4 leading-none uppercase italic">ROBOT<br />HÚT BỤI<br />TRÙM</h3>
-                <p className="text-white/80 text-sm mb-8 leading-relaxed">Bộ sưu tập robot hút bụi cao cấp nhất năm 2026 dành cho gia đình bạn.</p>
-                <Button className="bg-white text-primary hover:bg-gray-100 font-bold rounded-xl h-12">MUA NGAY</Button>
-              </div>
-            </div>
-          </div>
+        {/* New Products Carousel */}
+        <ProductCarousel
+          title="Sản phẩm mới"
+          products={newProducts.length > 0 ? newProducts : products}
+          icon={<Zap size={18} />}
+          loading={loading}
+          link="/products"
+        />
 
-          {/* Grid */}
-          <div className="flex-1">
-            <SectionTitle title="MÁY HÚT BỤI - LAU SÀN" icon={<Zap size={18} fill="white" />} link="/products?type=robot" />
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {loading ? [1, 2, 3, 4].map(i => <div key={i} className="h-80 bg-gray-200 rounded-xl" />) :
-                products.map(p => (
-                  <ProductGridItem key={p.id} product={p} />
-                ))}
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* Robot Vacuum Carousel */}
+        {robotProducts.length > 0 && (
+          <ProductCarousel
+            title="Robot Hút Bụi Lau Nhà"
+            products={robotProducts}
+            icon={<Zap size={18} />}
+            loading={loading}
+            link="/products?type=robot"
+          />
+        )}
 
-      {/* Blog Section */}
-      <div className="container mx-auto px-4 mb-8">
-        <SectionTitle title="TIN TỨC & HƯỚNG DẪN" icon={<FileText size={18} fill="white" />} link="/blog" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {blogs.length === 0 && !loading ? (
-            <div className="col-span-full py-20 text-center bg-white rounded-2xl border border-dashed text-gray-400">
-              <FileText className="mx-auto mb-4 opacity-20" size={48} />
-              Chưa có bài viết nào
-            </div>
-          ) : (
-            blogs.map(blog => (
-              <BlogCard key={blog.id} blog={blog} />
-            ))
-          )}
-        </div>
+        {/* Brand Section */}
+        <BrandSection />
+
+        {/* Accessories Carousel */}
+        {accessoryProducts.length > 0 && (
+          <ProductCarousel
+            title="Máy Hút Bụi & Phụ Kiện"
+            products={accessoryProducts}
+            icon={<Gift size={18} />}
+            loading={loading}
+            link="/products?type=accessory"
+          />
+        )}
+
+        {/* Blog Section */}
+        <BlogSection blogs={blogs} loading={loading} />
       </div>
     </div>
   );
