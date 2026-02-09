@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { adminAPI } from '@/lib/api';
+import { Editor } from '@tinymce/tinymce-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -473,12 +474,28 @@ export default function ProductsPage() {
               </div>
               <div className="col-span-2 space-y-2">
                 <Label>Mô tả chi tiết</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Mô tả đầy đủ về sản phẩm..."
-                  rows={4}
-                />
+                <div className="border rounded-md overflow-hidden">
+                  <Editor
+                    init={{
+                      height: 400,
+                      menubar: true,
+                      plugins: [
+                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                        'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                      ],
+                      toolbar: 'undo redo | blocks | ' +
+                        'bold italic forecolor | alignleft aligncenter ' +
+                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                        'removeformat | help',
+                      content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px }',
+                      skin: 'oxide-dark',
+                      content_css: 'dark',
+                    }}
+                    value={formData.description}
+                    onEditorChange={(content) => setFormData({ ...formData, description: content })}
+                  />
+                </div>
               </div>
               <div className="col-span-2 space-y-2">
                 <Label>Ảnh sản phẩm (URL, mỗi dòng một ảnh)</Label>

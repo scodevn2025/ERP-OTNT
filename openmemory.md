@@ -3,7 +3,8 @@
 ## Overview
 - Stack: FastAPI + SQLModel + PostgreSQL backend (`backend/main.py`), React 19 + Tailwind + shadcn frontend (`frontend/`).
 - Auth: JWT with bearer token stored in localStorage; auth endpoints under `/api/auth`.
-- Data domains: Catalog, Inventory (docs/stock/ledger), Serials, Sales Orders, Accounting (COA, Journal, Reports), Repair tickets, Storefront.
+- Data domains: Catalog, Inventory (docs/stock/ledger), Serials, Sales Orders, Accounting (COA, Journal, Reports), Repair tickets, Storefront (Premium Redesign).
+- Premium Redesign: High-end storefront using Dreame AU data, with a professional slate/black theme (#111827) and glassmorphism.
 
 ## Architecture
 - Backend entry: `backend/main.py` mounts routers from `backend/routers/` (auth, catalog, inventory, sales, repair, accounting, admin).
@@ -35,6 +36,7 @@
 - Seed data (`/admin/seed`) inserts warehouses, categories, brands, products, stock balances, COA.
 - Reference ZIP (`ERP-OTNT-main.zip`, dated 2026-02-07) contains the same frontend assets/layout but an older Mongo backend (`server.py` only, no routers); current working backend is SQLModel/PostgreSQL.
 - UI: `PRODUCT_TYPES` now holds `{label, color}` keyed by lowercase product_type (robot/goods/accessory/part/service); used across admin/store pages and dashboard progress bars. Admin layout adds “Made with Emergent” badge fixed bottom-right.
+- Premium Features: Storefront is themed for a high-end feel. Product seeding now uses real-world data from Dreame AUD store with 16.5k conversion rate. Hero banners and store config are dynamically managed via `seed_premium_data.py`.
 
 ## Gaps / Next Steps
 - Build frontend Repair page (`/admin/repairs`) to consume existing repair APIs.

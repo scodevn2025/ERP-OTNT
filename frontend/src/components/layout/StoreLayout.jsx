@@ -1,295 +1,233 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Toaster } from 'sonner';
-import { 
-  ShoppingCart, 
-  User, 
-  Search, 
-  Menu, 
-  X, 
-  LayoutDashboard,
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  ArrowRight,
+  ShoppingCart,
+  Menu,
   Phone,
-  Truck,
-  Shield,
-  ChevronDown,
+  Search,
+  User,
+  Heart,
+  ChevronRight,
   MapPin,
-  Mail,
-  Clock
+  Facebook,
+  Instagram,
+  Youtube,
+  Zap,
+  ChevronDown,
+  Star
 } from 'lucide-react';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
+import { storeAPI } from '@/lib/api';
+import { formatCurrency } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useStore } from '@/contexts/StoreContext';
 
-export function StoreLayout() {
+export function StoreLayout({ children }) {
   const { user, logout } = useAuth();
-  const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { settings, loading: settingsLoading } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const navLinks = [
-    { label: 'Trang chủ', path: '/' },
-    { label: 'Sản phẩm', path: '/products' },
-    { label: 'Robot hút bụi', path: '/products?type=robot' },
-    { label: 'Phụ kiện', path: '/products?type=accessory' },
-    { label: 'Liên hệ', path: '/contact' },
-  ];
+  if (settingsLoading || !settings) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
 
-  const popularSearches = [
-    'Dreame X40 Ultra',
-    'Roborock S8',
-    'Ecovacs X2',
-    'Tineco S7'
+  // Define menu items for the sidebar/navbar
+  const menuItems = [
+    { label: "Robot hút bụi lau nhà", path: "/products?type=robot", icon: "🤖" },
+    { label: "Máy hút bụi cầm tay", path: "/products?type=goods", icon: "🧹" },
+    { label: "Máy lọc không khí", path: "/products?type=air", icon: "💨" },
+    { label: "Robot lau kính", path: "/products?type=glass", icon: "🪟" },
+    { label: "Phụ kiện & Linh kiện", path: "/products?type=accessory", icon: "⚙️" },
+    { label: "Dịch vụ sửa chữa", path: "/services", icon: "🔧" },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="store-layout">
-      {/* Top Bar */}
-      <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-10">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4" />
-                <span>Miễn phí vận chuyển toàn quốc</span>
-              </div>
-              <div className="hidden md:flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                <span>Bảo hành chính hãng 12 tháng</span>
-              </div>
-            </div>
-            <a href="tel:0826123678" className="flex items-center gap-2 font-semibold hover:text-yellow-300 transition-colors">
-              <Phone className="w-4 h-4" />
-              <span>0826.123.678</span>
-            </a>
+    <div className="min-h-screen bg-[#f4f6f8] font-sans text-sm">
+      {/* Top Banner (Optional Promo) */}
+      <div className="bg-yellow-400 text-red-700 text-xs font-bold py-1 text-center hidden sm:block">
+        SIÊU SALE THÁNG 6 - GIẢM ĐẾN 50% TOÀN BỘ ROBOT HÚT BỤI - MUA NGAY!
+      </div>
+
+      {/* Top Header Information */}
+      <div className="bg-red-700 text-white py-1 text-xs border-b border-red-800">
+        <div className="container mx-auto px-4 flex justify-between items-center">
+          <div className="flex gap-4">
+            <span className="flex items-center gap-1 opacity-90 hover:opacity-100 cursor-pointer"><Phone size={12} /> {settings.contact_phone}</span>
+            <span className="flex items-center gap-1 opacity-90 hover:opacity-100 cursor-pointer"><MapPin size={12} /> Hệ thống cửa hàng</span>
+          </div>
+          <div className="flex gap-3">
+            <a href="#" className="opacity-90 hover:opacity-100">Tin công nghệ</a>
+            <a href="#" className="opacity-90 hover:opacity-100">Tuyển dụng</a>
+            <a href="#" className="opacity-90 hover:opacity-100">Liên hệ</a>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 gap-4">
+      <header className="bg-red-600 text-white sticky top-0 z-50 shadow-md">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-4 md:gap-8">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-500 flex items-center justify-center shadow-lg">
-                <span className="text-xl font-bold text-white">O</span>
+            <Link to="/" className="flex-shrink-0 flex items-center gap-2">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-primary font-black text-2xl shadow-sm italic">
+                {settings.site_name.charAt(0)}
               </div>
-              <div className="hidden sm:block">
-                <h1 className="font-bold text-lg text-gray-900 leading-tight">OTNT VIETNAM</h1>
-                <p className="text-xs text-gray-500">Robot hút bụi chính hãng</p>
+              <div className="flex flex-col leading-none">
+                <span className="font-extrabold text-xl tracking-tight uppercase">{settings.site_name}</span>
+                <span className="text-[10px] font-bold tracking-widest uppercase opacity-90">{settings.tagline}</span>
               </div>
             </Link>
 
             {/* Search Bar */}
             <div className="flex-1 max-w-2xl hidden md:block">
               <div className="relative">
-                <Input
+                <input
                   type="text"
-                  placeholder="Tìm kiếm sản phẩm..."
+                  placeholder="Bạn cần tìm gì? (Ví dụ: Dreame L10s Ultra...)"
+                  className="w-full h-10 pl-4 pr-12 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 shadow-inner"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-11 pl-4 pr-12 rounded-full border-2 border-gray-200 focus:border-red-500 bg-gray-50"
                 />
-                <Button 
-                  size="icon" 
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-red-500 hover:bg-red-600 h-9 w-9"
-                >
-                  <Search className="w-4 h-4 text-white" />
-                </Button>
-              </div>
-              {/* Popular Searches */}
-              <div className="flex items-center gap-2 mt-2 text-xs">
-                <span className="text-gray-500">🔥 Tìm kiếm phổ biến:</span>
-                {popularSearches.map((term, i) => (
-                  <Link 
-                    key={i} 
-                    to={`/products?search=${encodeURIComponent(term)}`}
-                    className="text-red-600 hover:text-red-700 hover:underline"
-                  >
-                    {term}
-                  </Link>
-                ))}
+                <button className="absolute right-0 top-0 h-10 w-12 bg-gray-800 hover:bg-gray-900 text-white rounded-r-lg flex items-center justify-center transition-colors">
+                  <Search size={18} />
+                </button>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Search className="w-5 h-5" />
-              </Button>
-              
-              <Link to="/cart" className="relative">
-                <Button variant="ghost" size="icon" className="relative">
-                  <ShoppingCart className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    0
-                  </span>
-                </Button>
-              </Link>
-              
-              {user ? (
-                <div className="flex items-center gap-2">
-                  {(user.role === 'admin' || user.role === 'manager') && (
-                    <Link to="/admin">
-                      <Button variant="outline" size="sm" className="hidden sm:flex gap-2 border-red-500 text-red-500 hover:bg-red-50">
-                        <LayoutDashboard className="w-4 h-4" />
-                        Admin
-                      </Button>
-                    </Link>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={logout} data-testid="store-logout">
-                    Đăng xuất
-                  </Button>
+            <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+              <Link to="/cart" className="flex flex-col items-center group relative p-1">
+                <div className="relative">
+                  <ShoppingCart size={24} />
+                  <span className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-yellow-400 text-red-700 text-[10px] font-bold flex items-center justify-center">0</span>
                 </div>
+                <span className="text-[10px] mt-1 opacity-90 group-hover:opacity-100 hidden sm:block">Giỏ hàng</span>
+              </Link>
+
+              <div className="h-8 w-[1px] bg-white/20 hidden sm:block"></div>
+
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex flex-col items-center cursor-pointer group p-1">
+                      <User size={24} />
+                      <span className="text-[10px] mt-1 opacity-90 group-hover:opacity-100 hidden sm:block truncate max-w-[60px]">{user.full_name}</span>
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {(user.role === 'admin' || user.role === 'manager') && <DropdownMenuItem><Link to="/admin">Trang Quản Trị</Link></DropdownMenuItem>}
+                    <DropdownMenuItem onClick={logout}>Đăng xuất</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
-                <Link to="/login">
-                  <Button size="sm" className="gap-2 bg-red-500 hover:bg-red-600">
-                    <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">Đăng nhập</span>
-                  </Button>
+                <Link to="/login" className="flex flex-col items-center group p-1">
+                  <User size={24} />
+                  <span className="text-[10px] mt-1 opacity-90 group-hover:opacity-100 hidden sm:block">Đăng nhập</span>
                 </Link>
               )}
-
-              {/* Mobile menu toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </Button>
             </div>
           </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1 py-2 border-t border-gray-100">
-            <Button variant="ghost" className="gap-2 text-red-600 font-semibold">
-              <Menu className="w-4 h-4" />
-              DANH MỤC
-              <ChevronDown className="w-4 h-4" />
-            </Button>
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={cn(
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                  location.pathname === link.path
-                    ? 'bg-red-50 text-red-600'
-                    : 'text-gray-700 hover:text-red-600 hover:bg-red-50'
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Mobile Nav */}
-          {mobileMenuOpen && (
-            <nav className="md:hidden py-4 border-t border-gray-100 animate-fade-in">
-              {/* Mobile Search */}
-              <div className="relative mb-4">
-                <Input
-                  type="text"
-                  placeholder="Tìm kiếm sản phẩm..."
-                  className="w-full h-10 pl-4 pr-10 rounded-full border-gray-200"
-                />
-                <Search className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              </div>
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          )}
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="min-h-[60vh]">
-        <Outlet />
+      {/* Sub-Header / Navigation (Visible on all pages? Or just Home?) */}
+      {/* Usually hidden on scroll, but kept simple here */}
+      <div className="bg-white border-b shadow-sm hidden md:block">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 py-3 px-4 bg-gray-100 font-bold text-gray-700 cursor-pointer hover:bg-gray-200 rounded-t-none w-[260px]">
+              <Menu size={18} />
+              DANH MỤC SẢN PHẨM
+            </div>
+            <div className="flex items-center gap-6 text-sm font-medium text-gray-600 overflow-x-auto">
+              {/* Horizontal Links for quick access */}
+              <Link to="/products?tag=flash-sale" className="flex items-center gap-1 hover:text-red-600 whitespace-nowrap"><Zap size={14} className="text-yellow-500 fill-yellow-500" /> Flash Sale</Link>
+              <Link to="/products?type=robot" className="hover:text-red-600 whitespace-nowrap">Robot Hút Bụi</Link>
+              <Link to="/products?type=goods" className="hover:text-red-600 whitespace-nowrap">Máy Cầm Tay</Link>
+              <Link to="/news" className="hover:text-red-600 whitespace-nowrap">Tin Tức</Link>
+              <Link to="/contact" className="hover:text-red-600 whitespace-nowrap">Liên Hệ</Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Page Content */}
+      <main className="min-h-[600px]">
+        {children || <Outlet />}
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white mt-12">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Company Info */}
+      <footer className="bg-white pt-10 border-t border-gray-200 mt-8 text-gray-700">
+        <div className="container mx-auto px-4 pb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center">
-                  <span className="text-xl font-bold">O</span>
-                </div>
-                <h3 className="font-bold text-lg">OTNT VIETNAM</h3>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Chuyên cung cấp robot hút bụi, máy lau nhà thông minh chính hãng từ các thương hiệu hàng đầu thế giới.
+              <h3 className="font-bold text-lg mb-4 text-primary uppercase">{settings.site_name}</h3>
+              <p className="text-sm mb-4 leading-relaxed">
+                {settings.tagline}. Hệ thống phân phối thông minh chính hãng uy tín nhất Việt Nam.
               </p>
+              <div className="flex gap-2">
+                <span className="p-2 bg-blue-600 text-white rounded-full"><Facebook size={16} /></span>
+                <span className="p-2 bg-pink-600 text-white rounded-full"><Instagram size={16} /></span>
+                <span className="p-2 bg-red-600 text-white rounded-full"><Youtube size={16} /></span>
+              </div>
             </div>
-
-            {/* Contact */}
             <div>
-              <h4 className="font-semibold text-lg mb-4">Liên hệ</h4>
-              <ul className="space-y-3 text-sm text-gray-400">
-                <li className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-red-500" />
-                  <span>Hotline: 0826.123.678</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-red-500" />
-                  <span>Email: support@otnt.vn</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-red-500" />
-                  <span>Hà Nội, Việt Nam</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-red-500" />
-                  <span>8:00 - 21:00 hàng ngày</span>
-                </li>
+              <h4 className="font-bold mb-4">VỀ CHÚNG TÔI</h4>
+              <ul className="space-y-2 text-sm text-gray-500">
+                <li><Link to="#" className="hover:text-red-600">Giới thiệu công ty</Link></li>
+                <li><Link to="#" className="hover:text-red-600">Hệ thống cửa hàng</Link></li>
+                <li><Link to="#" className="hover:text-red-600">Tuyển dụng</Link></li>
+                <li><Link to="#" className="hover:text-red-600">Chính sách bảo mật</Link></li>
               </ul>
             </div>
-
-            {/* Categories */}
             <div>
-              <h4 className="font-semibold text-lg mb-4">Danh mục</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link to="/products?type=robot" className="hover:text-red-500 transition-colors">Robot hút bụi</Link></li>
-                <li><Link to="/products?type=goods" className="hover:text-red-500 transition-colors">Gia dụng thông minh</Link></li>
-                <li><Link to="/products?type=accessory" className="hover:text-red-500 transition-colors">Phụ kiện</Link></li>
-                <li><Link to="/products?type=part" className="hover:text-red-500 transition-colors">Linh kiện thay thế</Link></li>
-                <li><Link to="/products?type=service" className="hover:text-red-500 transition-colors">Dịch vụ sửa chữa</Link></li>
+              <h4 className="font-bold mb-4">HỖ TRỢ KHÁCH HÀNG</h4>
+              <ul className="space-y-2 text-sm text-gray-500">
+                <li><Link to="#" className="hover:text-red-600">Hướng dẫn mua hàng</Link></li>
+                <li><Link to="#" className="hover:text-red-600">Chính sách bảo hành</Link></li>
+                <li><Link to="#" className="hover:text-red-600">Chính sách đổi trả</Link></li>
+                <li><Link to="#" className="hover:text-red-600">Chính sách vận chuyển</Link></li>
               </ul>
             </div>
-
-            {/* Policies */}
             <div>
-              <h4 className="font-semibold text-lg mb-4">Chính sách</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-red-500 transition-colors">Chính sách bảo hành</a></li>
-                <li><a href="#" className="hover:text-red-500 transition-colors">Chính sách đổi trả</a></li>
-                <li><a href="#" className="hover:text-red-500 transition-colors">Chính sách vận chuyển</a></li>
-                <li><a href="#" className="hover:text-red-500 transition-colors">Hướng dẫn mua hàng</a></li>
-                <li><a href="#" className="hover:text-red-500 transition-colors">Điều khoản sử dụng</a></li>
+              <h4 className="font-bold mb-4 uppercase">LIÊN HỆ</h4>
+              <ul className="space-y-3 text-sm">
+                <li className="flex gap-2"><MapPin size={16} className="text-primary shrink-0" /> <span>{settings.address}</span></li>
+                <li className="flex gap-2"><Phone size={16} className="text-primary shrink-0" /> <span className="font-bold text-primary">{settings.contact_phone}</span></li>
+                <li className="flex gap-2"><span className="text-primary font-bold shrink-0">@</span> <span>{settings.contact_email}</span></li>
               </ul>
             </div>
           </div>
-
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500">
-            <p>© 2026 OTNT Vietnam. All rights reserved.</p>
-          </div>
+        </div>
+        <div className="bg-gray-100 py-4 text-center text-xs text-gray-500">
+          © {new Date().getFullYear()} {settings.site_name}. All rights reserved.
         </div>
       </footer>
 
-      <Toaster position="top-right" richColors />
+      {/* Mobile Floating Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-2 px-4 md:hidden flex justify-between items-center z-50 text-[10px] text-gray-500">
+        <Link to="/" className="flex flex-col items-center text-red-600"><div className="mb-1"><Menu size={20} /></div>Trang chủ</Link>
+        <Link to="/products" className="flex flex-col items-center"><div className="mb-1"><Search size={20} /></div>Tìm kiếm</Link>
+        <Link to="/cart" className="flex flex-col items-center"><div className="mb-1 relative"><ShoppingCart size={20} /><span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full"></span></div>Giỏ hàng</Link>
+        <Link to="/user" className="flex flex-col items-center"><div className="mb-1"><User size={20} /></div>Tài khoản</Link>
+      </div>
     </div>
   );
 }
+
+import { Outlet } from 'react-router-dom';

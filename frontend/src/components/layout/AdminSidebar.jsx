@@ -18,6 +18,7 @@ import {
   FileText,
   BarChart3,
   Building2,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ const navItems = [
   { icon: Calculator, label: 'Sổ tài khoản', path: '/admin/accounts' },
   { icon: FileText, label: 'Sổ nhật ký', path: '/admin/journal' },
   { icon: BarChart3, label: 'Báo cáo', path: '/admin/reports' },
+  { icon: Settings, label: 'Cấu hình Store', path: '/admin/settings' },
   { icon: Wrench, label: 'Sửa chữa', path: '/admin/repairs', disabled: true },
   { icon: Users, label: 'Tuyển dụng', path: '/admin/recruitment', disabled: true },
 ];
@@ -62,9 +64,9 @@ export function AdminSidebar() {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Menu chính</p>
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || 
+          const isActive = location.pathname === item.path ||
             (item.path !== '/admin' && location.pathname.startsWith(item.path));
-          
+
           return (
             <Link
               key={item.path}

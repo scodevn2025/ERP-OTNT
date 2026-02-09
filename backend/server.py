@@ -414,6 +414,46 @@ class SalesOrderResponse(BaseModel):
     completed_at: Optional[str] = None
     created_at: str
 
+# ==================== STORE CONFIG MODELS ====================
+
+class HeroBanner(BaseModel):
+    image_url: str
+    title: Optional[str] = ""
+    subtitle: Optional[str] = ""
+    link: Optional[str] = "/"
+
+class StoreConfig(BaseModel):
+    site_name: str = "ONG TRÙM NỘI TRỢ"
+    tagline: str = "Robot hút bụi chính hãng"
+    logo_url: Optional[str] = None
+    favicon_url: Optional[str] = None
+    primary_color: str = "#dc2626"
+    secondary_color: str = "#1e293b"
+    contact_phone: str = "0826.123.678"
+    contact_email: str = "support@ongtrumnoitro.com"
+    address: str = "123 Cầu Giấy, Hà Nội"
+    facebook_url: Optional[str] = "#"
+    youtube_url: Optional[str] = "#"
+    instagram_url: Optional[str] = "#"
+    hero_banners: List[HeroBanner] = []
+
+class StoreConfigResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    site_name: str
+    tagline: str
+    logo_url: Optional[str] = None
+    favicon_url: Optional[str] = None
+    primary_color: str
+    secondary_color: str
+    contact_phone: str
+    contact_email: str
+    address: str
+    facebook_url: Optional[str] = "#"
+    youtube_url: Optional[str] = "#"
+    instagram_url: Optional[str] = "#"
+    hero_banners: List[HeroBanner] = []
+    updated_at: str
+
 # ==================== AUTH HELPERS ====================
 
 # ==================== REPAIR & WARRANTY MODELS ====================
@@ -597,6 +637,52 @@ async def create_category(data: CategoryCreate, user: dict = Depends(require_adm
     }
     await db.categories.insert_one(doc)
     return CategoryResponse(**{k: v for k, v in doc.items() if k != '_id'})
+
+# ==================== STORE CONFIG ROUTES ====================
+
+@api_router.get("/store/config", response_model=StoreConfigResponse)
+async def get_store_config():
+    config = await db.store_config.find_one({"type": "general"}, {"_id": 0})
+    if not config:
+        now = datetime.now(timezone.utc).isoformat()
+        return StoreConfigResponse(
+            site_name="ONG TRÙM NỘI TRỢ",
+            tagline="Robot hút bụi chính hãng",
+            primary_color="#dc2626",
+            secondary_color="#1e293b",
+            contact_phone="0826.123.678",
+            contact_email="support@ongtrumnoitro.com",
+            address="123 Cầu Giấy, Hà Nội",
+            updated_at=now
+        )
+    return StoreConfigResponse(**config)
+
+@api_router.get("/admin/config", response_model=StoreConfigResponse)
+async def get_admin_config(user: dict = Depends(require_admin)):
+    config = await db.store_config.find_one({"type": "general"}, {"_id": 0})
+    if not config:
+        now = datetime.now(timezone.utc).isoformat()
+        config = StoreConfig().model_dump()
+        config["type"] = "general"
+        config["updated_at"] = now
+        await db.store_config.insert_one(config)
+        del config["_id"]
+    return StoreConfigResponse(**config)
+
+@api_router.post("/admin/config", response_model=StoreConfigResponse)
+async def update_store_config(data: StoreConfig, user: dict = Depends(require_admin)):
+    now = datetime.now(timezone.utc).isoformat()
+    update_data = data.model_dump()
+    update_data["updated_at"] = now
+    
+    await db.store_config.update_one(
+        {"type": "general"},
+        {"$set": update_data},
+        upsert=True
+    )
+    
+    config = await db.store_config.find_one({"type": "general"}, {"_id": 0})
+    return StoreConfigResponse(**config)
 
 @api_router.put("/admin/categories/{category_id}", response_model=CategoryResponse)
 async def update_category(category_id: str, data: CategoryCreate, user: dict = Depends(require_admin)):
