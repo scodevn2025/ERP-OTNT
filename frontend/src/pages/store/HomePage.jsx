@@ -12,13 +12,15 @@ import {
   Truck,
   Shield,
   Gift,
-  RefreshCw
+  RefreshCw,
+  Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useState, useRef } from 'react';
 import { storeAPI } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useStore } from '@/contexts/StoreContext';
+import { useCart } from '@/contexts/CartContext';
 
 // --- Brand Logos ---
 const BRANDS = [
@@ -40,23 +42,30 @@ const POPULAR_SEARCHES = [
 
 // --- Product Card Component ---
 const ProductCard = ({ product }) => {
+  const { addItem } = useCart();
   const originalPrice = product.price * 1.25;
   const discount = Math.round(((originalPrice - product.price) / originalPrice) * 100);
 
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem(product, 1, null);
+  };
+
   return (
     <Link to={`/products/${product.slug}`} className="group block h-full">
-      <div className="bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col">
+      <div className="bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col relative">
         {/* Discount Badge */}
         {discount > 0 && (
-          <div className="absolute top-3 left-3 z-10">
-            <Badge className="bg-red-500 text-white font-bold text-xs px-2 py-1 rounded-md border-none">
+          <div className="absolute top-2 left-2 z-10">
+            <Badge className="bg-red-500 text-white font-bold text-[10px] px-1.5 py-0.5 rounded border-none">
               -{discount}%
             </Badge>
           </div>
         )}
 
         {/* Product Image */}
-        <div className="relative aspect-square p-4 bg-gradient-to-b from-gray-50 to-white overflow-hidden">
+        <div className="relative aspect-square p-3 bg-gradient-to-b from-gray-50 to-white overflow-hidden">
           <img
             src={product.images?.[0] || 'https://via.placeholder.com/300'}
             alt={product.name}
@@ -65,32 +74,34 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Product Info */}
-        <div className="p-4 flex-1 flex flex-col">
-          <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-3 group-hover:text-primary transition-colors min-h-[40px]">
+        <div className="p-3 flex-1 flex flex-col">
+          <h3 className="text-xs font-medium text-[#1a2a4a] line-clamp-2 mb-2 group-hover:text-primary transition-colors min-h-[32px] leading-tight">
             {product.name}
           </h3>
 
-          <div className="mt-auto space-y-2">
+          <div className="mt-auto space-y-1">
             {/* Original Price */}
-            <div className="text-gray-400 text-xs line-through">
+            <div className="text-gray-400 text-[10px] line-through">
               {formatCurrency(originalPrice)}
             </div>
 
             {/* Sale Price */}
-            <div className="text-primary font-black text-lg">
+            <div className="text-primary font-bold text-sm">
               {formatCurrency(product.price)}
+            </div>
+
+            {/* Stock Status */}
+            <div className="text-[10px] text-green-600 flex items-center gap-1">
+              <Check className="w-3 h-3" /> Còn hàng
             </div>
 
             {/* Quick Add Button */}
             <Button
-              className="w-full bg-primary hover:bg-red-700 text-white font-bold rounded-lg py-2 text-sm shadow-md shadow-primary/20 flex items-center justify-center gap-2"
-              onClick={(e) => {
-                e.preventDefault();
-                // TODO: Add to cart
-              }}
+              className="w-full bg-primary hover:bg-red-700 text-white font-semibold rounded-lg py-1.5 text-xs shadow-sm flex items-center justify-center gap-1"
+              onClick={handleAddToCart}
             >
-              <ShoppingCart size={14} />
-              Mua ngay
+              <ShoppingCart size={12} />
+              Thêm giỏ hàng
             </Button>
           </div>
         </div>
